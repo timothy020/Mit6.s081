@@ -277,6 +277,8 @@ fork(void)
 
   np->parent = p;
 
+  np->syscallmask = p->syscallmask;
+
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
