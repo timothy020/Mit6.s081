@@ -74,13 +74,20 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
   if(va >= MAXVA)
     panic("walk");
 
+  // 根据va，查询多级页表，得到pte
+  // 循环两次：2->1, 1->0，1，0级页表没生成则创建（二级页表初始化时已经创建）
   for(int level = 2; level > 0; level--) {
+    // 30..38 -> 21..29 -> 12..20
     pte_t *pte = &pagetable[PX(level, va)];
     if(*pte & PTE_V) {
+      // 直接映射: pte右移10清除flag，左移12得到offset，PPN+Offset=下级页表的pa
       pagetable = (pagetable_t)PTE2PA(*pte);
     } else {
+      // 延迟创建，如果下级页表还没创建，则kalloc创建下一级页表
+      // pagetable即为下级页表的pa
       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
         return 0;
+      // 赋值给上级页表的pte
       memset(pagetable, 0, PGSIZE);
       *pte = PA2PTE(pagetable) | PTE_V;
     }
@@ -154,10 +161,13 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   a = PGROUNDDOWN(va);
   last = PGROUNDDOWN(va + size - 1);
   for(;;){
+    // 根据va找到pte（内核页表在kvminit中用kalloc分配过）
+    // 显然pte是内核页表中的一段，是物理地址指针
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
     if(*pte & PTE_V)
       panic("remap");
+    // 得到pte后，给pte赋值，赋值的内容即pa，实现映射
     *pte = PA2PTE(pa) | perm | PTE_V;
     if(a == last)
       break;
