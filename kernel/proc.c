@@ -270,15 +270,10 @@ growproc(int n)
 
   sz = p->sz;
   if(n > 0){
-    uint64 newsz;
-    if((newsz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
+    if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
     }
-    if(kvmcopy_mappings(p->pagetable, p->kpagetable, sz, n) != 0) {
-      uvmdealloc(p->pagetable, newsz, sz);
-      return -1;
-    }
-    sz = newsz;
+    kvmcopy_mappings(p->pagetable, p->kpagetable, p->sz, n);
   } else if(n < 0){
     uvmdealloc(p->pagetable, sz, sz + n);
     sz = kvmdealloc(p->kpagetable, sz, sz + n);

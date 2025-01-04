@@ -453,7 +453,7 @@ kvmcopy_mappings(pagetable_t src, pagetable_t dst, uint64 start, uint64 sz)
   return 0;
 
  err:
-  // 此处也要修改
+  // 此处也需要修改
   uvmunmap(dst, PGROUNDUP(start), (i - PGROUNDUP(start)) / PGSIZE, 0);
   return -1;
 }
