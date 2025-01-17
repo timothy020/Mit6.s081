@@ -99,7 +99,7 @@ userret:
         # put the saved user a0 in sscratch, so we
         # can swap it with our a0 (TRAPFRAME) in the last step.
         ld t0, 112(a0)
-        csrw sscratch, t0
+        csrw sscratch, t0       //系统调用的结果存在sscratch中
 
         # restore all but a0 from TRAPFRAME
         ld ra, 40(a0)
@@ -134,7 +134,7 @@ userret:
         ld t6, 280(a0)
 
 	# restore user a0, and save TRAPFRAME in sscratch
-        csrrw a0, sscratch, a0
+        csrrw a0, sscratch, a0  //系统调用结果 -> a0, Trapoline -> sscratch
         
         # return to user mode and user pc.
         # usertrapret() set up sstatus and sepc.
