@@ -17,6 +17,19 @@
 
 volatile int panicked = 0;
 
+void backtrace() {
+  uint64 fp = r_fp(); // Get the current frame pointer
+    printf("backtrace:\n");
+
+  while(fp != PGROUNDUP(fp)) {
+    // Return address is at fp - 8
+    uint64 ra = *(uint64 *)(fp - 8);
+    printf("0x%p\n", ra);
+    // Saved frame pointer is at fp - 16
+    fp = *(uint64 *)(fp - 16);
+  }
+}
+
 // lock to avoid interleaving concurrent printf's.
 static struct {
   struct spinlock lock;
@@ -118,6 +131,7 @@ void
 panic(char *s)
 {
   pr.locking = 0;
+  backtrace(); // Add this line
   printf("panic: ");
   printf(s);
   printf("\n");
