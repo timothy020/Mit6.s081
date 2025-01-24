@@ -16,6 +16,25 @@ void kernelvec();
 
 extern int devintr();
 
+int 
+sigalarm(int ticks, void (*handler)())
+{
+  // 设置 myproc 中的相关属性
+  struct proc *p = myproc();
+  p->alarm_interval = ticks;
+  p->alarm_handler = handler;
+  p->alarm_ticks = ticks;
+  return 0;
+}
+int 
+sigreturn(void)
+{
+  struct proc *p = myproc();
+  *p->trapframe = *p->alarm_trapframe;
+  p->inhandler = 0;
+  return 0;
+}
+
 void
 trapinit(void)
 {
@@ -77,8 +96,18 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    if(p->alarm_interval != 0) {
+      if(--p->alarm_ticks <= 0 && p->inhandler == 0) { // 时钟倒计时 -1 tick，如果已经到达或超过设定的 tick 数
+        p->inhandler = 1;
+        p->alarm_ticks = p->alarm_interval;
+        // jump to execute alarm_handler
+        *p->alarm_trapframe = *p->trapframe; // backup trapframe
+        p->trapframe->epc = (uint64)p->alarm_handler;
+      }
+    }
     yield();
+  }
 
   usertrapret();
 }
