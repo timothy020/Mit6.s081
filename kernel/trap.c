@@ -70,16 +70,23 @@ usertrap(void)
   } else if((r_scause() == 13) || (r_scause() == 15)) {
     // page fault
     uint64 vaddr = r_stval();
-    char *mem = kalloc();
-    if (mem == 0) {
-		  panic("cannot allocate for lazy alloc\n");
-    } 
-    memset(mem, 0, PGSIZE);
-    pagetable_t pagetable = myproc()->pagetable;
+    // 虚拟地址地址>=p->sz, 或<stack
+    if ((vaddr >= p->sz) || (vaddr < p->trapframe->sp)) {
+      p->killed = 1;
+    } else {
+      char *mem = kalloc();
+      if (mem == 0) {
+        p->killed = 1;
+        panic("cannot allocate for lazy alloc\n");
+      } 
+      memset(mem, 0, PGSIZE);
+      pagetable_t pagetable = myproc()->pagetable;
 
-    if(mappages(pagetable, PGROUNDDOWN(vaddr), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
-      kfree(mem);
-      panic("cannot map for lazy alloc\n");
+      if(mappages(pagetable, PGROUNDDOWN(vaddr), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+        kfree(mem);
+        p->killed = 1;
+        panic("cannot map for lazy alloc\n");
+      }
     }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);

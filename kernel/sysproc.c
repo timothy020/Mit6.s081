@@ -54,7 +54,8 @@ sys_sbrk(void)
   if(n >= 0) {
     p->sz += n;
   } else {
-    uvmdealloc(p->pagetable, p->sz, p->sz+n); // 如果是缩小空间，则马上释放
+    // Handle negative sbrk() arguments.
+    p->sz = uvmdealloc(p->pagetable, addr, p->sz+n); // 如果是缩小空间，则马上释放
   }
   return addr;
 }
