@@ -51,12 +51,11 @@ sys_sbrk(void)
   // if(growproc(n) < 0)
   //   return -1;
   // return addr;
-  if(n >= 0) {
-    p->sz += n;
-  } else {
+  if(n < 0) {
     // Handle negative sbrk() arguments.
-    p->sz = uvmdealloc(p->pagetable, addr, p->sz+n); // 如果是缩小空间，则马上释放
+    uvmdealloc(p->pagetable, p->sz, p->sz+n); // 如果是缩小空间，则马上释放
   }
+  p->sz += n;
   return addr;
 }
 
