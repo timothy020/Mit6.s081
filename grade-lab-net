@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+__attribute__((noreturn))
 
 import re
 import subprocess
